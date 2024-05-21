@@ -113,16 +113,42 @@ def binary_string_to_mnemonic(binary_string, word_list_file):
     print(color.YELLOW + 'Checksum: ' + color.END + f'{checksum}')
     binary_seed = (bin(int(tmp_hex, 16))[2:].zfill(bytes * 8) + checksum)
     print(f'binary_seed: {binary_seed}')
-    # Split the binary string into chunks of 11 bits each
-    chunks = [binary_seed[i:i+11] for i in range(0, len(binary_string), 11)]
-    # Open wordlist file, using english since other languages do not have sense
-    with open(word_list_file, 'r') as f:
-        word_list = [word.strip() for word in f.readlines()]
-    # Map each chunk to its corresponding index in the word list
-    indexes = [int(chunk, 2) for chunk in chunks]
-    # Generate the mnemonic by retrieving words from the word list
-    mnemonic = ' '.join(word_list[index] for index in indexes)
-    return mnemonic
+
+    index_list = []
+    start = 0
+    part = 11
+    while start < len(binary_seed):
+        index_list.append(binary_seed[start: start + part])
+        start += part
+
+    # Converting binary indexes to integer
+    index_list_int = []
+    b = 0
+    while b < len(index_list):
+        index_list_int.append(int(index_list[b], 2))
+        b += 1
+
+    f = open('Wordlists/b39en', 'r')  # Opening English wordlist, just because the others are useless
+    mnemonic = []
+    w = 0
+    while w < len(index_list_int):
+        f.seek(0)
+        for i, line in enumerate(f):
+            if i == index_list_int[w]:
+                mnemonic.append(line.strip('\n'))
+        w += 1
+
+    # Verify conversion
+    c = 0
+    print(color.DARKCYAN + '\nVerify indexes' + color.END)
+    while c < len(index_list):
+        if c < 9: # when index is less than 9 it adds a 0 to the output to align it
+            print(f'Index 0{c + 1}: {index_list[c]} -> {str(index_list_int[c]).zfill(4)} -> {mnemonic[c]}')
+        else:
+            print(f'Index {c + 1}: {index_list[c]} -> {str(index_list_int[c]).zfill(4)} -> {mnemonic[c]}')
+        c += 1
+    mnemonic_clean = ' '.join(mnemonic) # converting list to string
+    return mnemonic_clean
 
 # START
 print(color.RED + 'Note that this tool may have undesired results with not properly working hardware. Check your hardware before continuing' + color.END)
